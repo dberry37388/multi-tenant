@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use Hyn\Tenancy\Contracts\Repositories\HostnameRepository;
+use Hyn\Tenancy\Models\Website;
+use Hyn\Tenancy\Repositories\WebsiteRepository;
 use Illuminate\Console\Command;
 
 class DeleteTenant extends Command
@@ -12,7 +14,7 @@ class DeleteTenant extends Command
      *
      * @var string
      */
-    protected $signature = 'tenant:delete {tenant}';
+    protected $signature = 'tenant:delete {tenant} {--force}';
 
     /**
      * The console command description.
@@ -29,9 +31,10 @@ class DeleteTenant extends Command
     public function handle()
     {
         $fqdn = $this->argument('tenant') .'.'. config('app.url_base');
+        $force = $this->option('force');
         
         if ($tenant = $this->getTenantByFqdn($fqdn)) {
-            $tenant->website()->delete();
+            app(WebsiteRepository::class)->delete($tenant->website, $force);
             $tenant->delete();
         }
     }
@@ -45,6 +48,7 @@ class DeleteTenant extends Command
     protected function getTenantByFqdn($fqdn)
     {
         return app(HostnameRepository::class)->query()
+            ->withTrashed()
             ->where('fqdn', $fqdn)
             ->first();
     }
