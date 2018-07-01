@@ -34,8 +34,15 @@ class DeleteTenant extends Command
         $force = $this->option('force');
         
         if ($tenant = $this->getTenantByFqdn($fqdn)) {
-            app(WebsiteRepository::class)->delete($tenant->website, $force);
-            $tenant->delete();
+            if ($tenant->website) {
+                app(WebsiteRepository::class)->delete($tenant->website, $force);
+            }
+            
+            app(HostnameRepository::class)->delete($tenant, $force);
+    
+            $this->info("Tenant {$fqdn} successfully deleted.");
+        } else {
+            $this->error("Could not find tenant {$fqdn}");
         }
     }
     
